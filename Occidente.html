@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Extractor Banco de Occidente</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased">
+
+    <div class="min-h-screen">
+        <div class="container mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
+            <!-- Header -->
+            <header class="text-center">
+                <h1 class="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+                    Extractor Banco de Occidente
+                </h1>
+                <p class="mt-4 text-lg text-slate-600">
+                    Cargue el PDF del Banco de Occidente para extraer los datos.
+                </p>
+            </header>
+
+            <!-- Main Content -->
+            <main class="mt-8">
+                <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-lg border border-slate-200">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                        <!-- File Upload Section -->
+                        <div class="flex flex-col space-y-4">
+                            <label class="text-lg font-semibold text-slate-800">1. Upload Your Statement</label>
+                            <button id="file-upload-area" class="relative flex flex-col items-center justify-center w-full h-48 p-4 border-2 border-dashed rounded-xl cursor-pointer transition-colors duration-200 border-slate-300 hover:border-indigo-400 hover:bg-slate-50">
+                                <input id="file-upload-input" type="file" accept=".pdf" class="hidden" />
+                                <div class="flex flex-col items-center text-center text-slate-500 pointer-events-none">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 mb-3"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l-3.75 3.75M12 9.75l3.75 3.75M3 17.25V21h18v-3.75m-18 0V12a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 12v5.25"></path></svg>
+                                    <p class="font-semibold"><span class="text-indigo-600">Click to upload</span> or drag and drop</p>
+                                    <p class="text-sm">PDF file only</p>
+                                </div>
+                            </button>
+                            <div id="file-name-display" class="hidden items-center p-3 bg-slate-100 rounded-lg text-sm text-slate-700">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-3 text-slate-500 flex-shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"></path></svg>
+                                <span id="file-name-text" class="font-medium truncate"></span>
+                            </div>
+                        </div>
+
+                        <!-- Status and Export Section -->
+                        <div class="flex flex-col h-full justify-between gap-6">
+                            <!-- Status Display -->
+                            <div class="flex flex-col space-y-4">
+                                <label class="text-lg font-semibold text-slate-800">2. Processing Status</label>
+                                <div id="status-display" class="p-4 rounded-lg text-sm flex items-center bg-slate-100 text-slate-500">
+                                    <div id="status-icon" class="mr-3"></div>
+                                    <span id="status-message">Awaiting file upload...</span>
+                                </div>
+                            </div>
+                            <!-- Export Controls -->
+                            <div id="export-controls" class="hidden mt-auto">
+                                <label class="text-lg font-semibold text-slate-800 mb-4 block">3. Export Data</label>
+                                <div class="flex flex-col sm:flex-row gap-4">
+                                    <button id="export-csv-button" class="flex-1 inline-flex items-center justify-center px-4 py-2.5 bg-green-600 text-white font-semibold rounded-lg shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"></path></svg>
+                                        Export to CSV
+                                    </button>
+                                    <button id="export-json-button" class="flex-1 inline-flex items-center justify-center px-4 py-2.5 bg-sky-600 text-white font-semibold rounded-lg shadow-sm hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition-colors duration-200">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75h-10.5a.75.75 0 00-.75.75v10.5c0 .414.336.75.75.75h10.5a.75.75 0 00.75-.75V7.5a.75.75 0 00-.75-.75z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 12.75H11.25M12.75 12.75H14.25M10.5 15.75H13.5"></path></svg>
+                                        Export to JSON
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Table Section -->
+                    <div id="results-container" class="mt-8 hidden">
+                         <div id="table-container" class="hidden">
+                            <h3 class="text-xl font-semibold text-slate-900 mb-4">Extracted Transactions</h3>
+                            <div class="overflow-x-auto rounded-lg border border-slate-200">
+                                <table class="min-w-full divide-y divide-slate-200">
+                                    <thead class="bg-slate-50">
+                                        <tr>
+                                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-slate-900">Fecha</th>
+                                            <th scope="col" class="py-3.5 px-6 text-left text-sm font-semibold text-slate-900">Descripción</th>
+                                            <th scope="col" class="py-3.5 px-4 text-right text-sm font-semibold text-slate-900">Movimiento</th>
+                                            <th scope="col" class="py-3.5 px-4 text-right text-sm font-semibold text-slate-900">Saldo</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="transactions-table-body" class="divide-y divide-slate-200 bg-white">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div id="no-results-display" class="hidden text-center py-12 px-6 bg-slate-100 rounded-lg">
+                            <h3 class="text-lg font-medium text-slate-700">No Transactions Found</h3>
+                            <p class="text-sm text-slate-500 mt-1">
+                                No transactions matching the expected format were found in the PDF.
+                            </p>
+                         </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as pdfjsLib from "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.min.mjs";
+
+        // Set the worker source for pdf.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.worker.mjs`;
+
+        // --- GLOBAL STATE ---
+        let transactions = [];
+        let currentFileName = '';
+
+        // --- DOM ELEMENT REFERENCES ---
+        const fileUploadArea = document.getElementById('file-upload-area');
+        const fileUploadInput = document.getElementById('file-upload-input');
+        const fileNameDisplay = document.getElementById('file-name-display');
+        const fileNameText = document.getElementById('file-name-text');
+        
+        const statusDisplay = document.getElementById('status-display');
+        const statusIcon = document.getElementById('status-icon');
+        const statusMessage = document.getElementById('status-message');
+        
+        const exportControls = document.getElementById('export-controls');
+        const exportCsvButton = document.getElementById('export-csv-button');
+        const exportJsonButton = document.getElementById('export-json-button');
+        
+        const resultsContainer = document.getElementById('results-container');
+        const tableContainer = document.getElementById('table-container');
+        const noResultsDisplay = document.getElementById('no-results-display');
+        const transactionsTableBody = document.getElementById('transactions-table-body');
+        
+        // --- UI UPDATE FUNCTIONS ---
+        function updateStatus(status, message) {
+            statusDisplay.className = 'p-4 rounded-lg text-sm flex items-center'; // Reset classes
+            statusIcon.innerHTML = '';
+            switch (status) {
+                case 'loading':
+                    statusDisplay.classList.add('bg-blue-100', 'text-blue-800');
+                    statusIcon.innerHTML = `<svg class="spinner w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+                    break;
+                case 'success':
+                    statusDisplay.classList.add('bg-green-100', 'text-green-800');
+                    break;
+                case 'error':
+                    statusDisplay.classList.add('bg-red-100', 'text-red-800');
+                    statusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"></path></svg>`;
+                    break;
+                case 'idle':
+                    statusDisplay.classList.add('bg-slate-100', 'text-slate-500');
+                    break;
+            }
+            statusMessage.textContent = message;
+        }
+
+        const formatColombianNumber = (value) => new Intl.NumberFormat('es-CO', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(value);
+
+        function renderTable() {
+            transactionsTableBody.innerHTML = '';
+            if (transactions.length > 0) {
+                transactions.forEach(tx => {
+                    const [year, month, day] = tx.date.split('-');
+                    const formattedDate = `${day}/${month}/${year}`;
+
+                    const row = transactionsTableBody.insertRow();
+                    row.className = 'hover:bg-slate-50 transition-colors';
+                    row.innerHTML = `
+                        <td class="whitespace-nowrap py-4 px-4 text-sm text-slate-500">${formattedDate}</td>
+                        <td class="py-4 px-6 text-sm text-slate-700">${tx.description}</td>
+                        <td class="whitespace-nowrap py-4 px-4 text-sm text-right font-mono ${tx.movement < 0 ? 'text-red-600' : 'text-green-600'}">
+                            ${formatColombianNumber(tx.movement)}
+                        </td>
+                        <td class="whitespace-nowrap py-4 px-4 text-sm text-right font-mono text-slate-600">
+                            ${formatColombianNumber(tx.balance)}
+                        </td>
+                    `;
+                });
+                tableContainer.classList.remove('hidden');
+                noResultsDisplay.classList.add('hidden');
+                exportControls.classList.remove('hidden');
+            } else {
+                tableContainer.classList.add('hidden');
+                noResultsDisplay.classList.remove('hidden');
+                exportControls.classList.add('hidden');
+            }
+            resultsContainer.classList.remove('hidden');
+        }
+
+        function resetState() {
+            transactions = [];
+            currentFileName = '';
+            fileUploadInput.value = ''; // Reset file input
+            
+            fileNameDisplay.classList.add('hidden');
+            resultsContainer.classList.add('hidden');
+            exportControls.classList.add('hidden');
+            updateStatus('idle', 'Awaiting file upload...');
+        }
+        
+        /**
+         * Cleans a currency string into a number, handling both es-CO (e.g., "1.234,56")
+         * and en-US (e.g., "1,234.56") formats for robust parsing.
+         * @param {string} str The currency string.
+         * @returns {number} The parsed number.
+         */
+        function cleanAmount(str) {
+            if (!str) return 0;
+            const s = String(str).trim().replace(/\$/g, '');
+            // Check if comma is used as decimal separator (common in es-CO)
+            if (s.includes(',') && s.lastIndexOf(',') > s.lastIndexOf('.')) {
+                return parseFloat(s.replace(/\./g, '').replace(',', '.')) || 0;
+            }
+            // Assume comma is a thousands separator (common in en-US)
+            return parseFloat(s.replace(/,/g, '')) || 0;
+        }
+        
+        /**
+         * Parses the extracted lines of text to find transactions for Banco de Occidente.
+         * @param {string[]} lines An array of text lines from the PDF.
+         */
+        function parseData(lines) {
+            let parsedTransactions = [];
+            let statementMonth = '';
+            let statementYear = '';
+
+            // First pass: Find the statement date (Fecha de Corte)
+            const dateCutRegex = /FECHA DE CORTE:\s*\d{2}\/(\d{2})\/(\d{4})/;
+            for (const line of lines) {
+                const match = line.match(dateCutRegex);
+                if (match) {
+                    statementMonth = match[1];
+                    statementYear = match[2];
+                    break;
+                }
+            }
+
+            if (!statementMonth || !statementYear) {
+                throw new Error("Could not determine statement date (Month/Year). Check for 'FECHA DE CORTE:'.");
+            }
+            
+            let inTransactionSection = false;
+            const startKeyword = 'DIA';
+            const headerKeyword = 'TRANSACCI'; // Using partial to be robust against OCR errors with 'Ó'
+            const stopKeyword = 'ESTE PRODUCTO CUENTA CON SEGURO';
+
+            // Regex for Banco de Occidente format: DIA, DESCRIPTION, ID, DEBITO, CREDITO, SALDO
+            // This is more robust as it explicitly looks for the ID column (e.g., M00-903, A223939).
+            const transactionRegex = /^(\d{1,2})\s+(.+?)\s+([A-Z0-9-]+)\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)$/;
+
+            for (const line of lines) {
+                const trimmedLine = line.trim();
+                if (!trimmedLine) continue;
+                
+                const upperLine = trimmedLine.toUpperCase();
+
+                if (upperLine.startsWith(startKeyword) && upperLine.includes(headerKeyword)) {
+                    inTransactionSection = true;
+                    continue;
+                }
+
+                if (upperLine.startsWith(stopKeyword)) {
+                    inTransactionSection = false;
+                    continue; // Continue to next line instead of breaking the loop
+                }
+
+                if (inTransactionSection) {
+                    const match = trimmedLine.match(transactionRegex);
+
+                    if (match) {
+                        const day = match[1].padStart(2, '0');
+                        // Group 2 is the description. Group 3 is the ID, which is ignored per UI design.
+                        let description = match[2].trim().replace(/\s\s+/g, ' ');
+
+                        const debit = cleanAmount(match[4]);
+                        const credit = cleanAmount(match[5]);
+                        const balance = cleanAmount(match[6]);
+
+                        // Determine the movement value. Debits are negative, credits are positive.
+                        const movement = credit > 0 ? credit : -debit;
+
+                        parsedTransactions.push({
+                            date: `${statementYear}-${statementMonth}-${day}`,
+                            description: description,
+                            movement: movement,
+                            balance: balance
+                        });
+                    }
+                }
+            }
+            return parsedTransactions;
+        }
+
+
+        // --- FILE HANDLING ---
+        async function handleFile(file) {
+            if (!file) {
+                resetState();
+                return;
+            }
+            
+            resetState();
+            currentFileName = file.name;
+            fileNameText.textContent = currentFileName;
+            fileNameDisplay.classList.remove('hidden');
+
+            try {
+                updateStatus('loading', 'Reading PDF file...');
+                const pdfData = new Uint8Array(await file.arrayBuffer());
+                
+                updateStatus('loading', 'Extracting text from PDF...');
+                const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+                
+                let allLines = [];
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    
+                    // Robustly group items by line based on Y-coordinate
+                    const lines = new Map();
+                    textContent.items.forEach(item => {
+                        // Round Y to group items on approximately the same line
+                        const y = Math.round(item.transform[5]);
+                        if (!lines.has(y)) {
+                            lines.set(y, []);
+                        }
+                        lines.get(y).push(item);
+                    });
+
+                    // Sort lines from top to bottom
+                    const sortedY = Array.from(lines.keys()).sort((a, b) => b - a);
+                    
+                    // For each line, sort items from left to right and join them
+                    sortedY.forEach(y => {
+                        const lineItems = lines.get(y);
+                        lineItems.sort((a, b) => a.transform[4] - b.transform[4]); // Sort by X-coordinate
+                        const lineText = lineItems.map(item => item.str).join(' ').trim();
+                        if (lineText) {
+                            allLines.push(lineText);
+                        }
+                    });
+                }
+
+                if (allLines.length === 0) throw new Error("No text found in PDF.");
+
+                updateStatus('loading', 'Parsing extracted text...');
+                transactions = parseData(allLines);
+                
+                if (transactions.length === 0) {
+                    updateStatus('success', 'Processing complete. No transactions found.');
+                } else {
+                    updateStatus('success', `Successfully extracted ${transactions.length} transactions.`);
+                }
+                renderTable();
+
+            } catch (error) {
+                console.error("Processing error:", error);
+                updateStatus('error', error.message || 'An unknown error occurred.');
+                resultsContainer.classList.remove('hidden');
+                tableContainer.classList.add('hidden');
+                noResultsDisplay.classList.remove('hidden');
+            }
+        }
+        
+        // --- EXPORT FUNCTIONS ---
+        function downloadFile(content, fileName, contentType) {
+            const blob = new Blob([content], { type: contentType });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+        }
+
+        function exportToCSV() {
+            if (transactions.length === 0) return;
+            const header = 'Fecha|Descripcion|Movimiento|Saldo\n';
+            const rows = transactions.map(tx => {
+                const description = `"${tx.description.replace(/"/g, '""')}"`;
+                // Use toFixed(2) to standardize the number format for export
+                const movement = tx.movement.toFixed(2);
+                const balance = tx.balance.toFixed(2);
+                return [tx.date, description, movement, balance].join('|');
+            });
+            const csvContent = header + rows.join('\n');
+            downloadFile(csvContent, `transactions-${currentFileName.replace('.pdf', '')}.csv`, 'text/csv;charset=utf-8;');
+        }
+
+        function exportToJSON() {
+            if (transactions.length === 0) return;
+            const jsonContent = JSON.stringify(transactions, null, 2);
+            downloadFile(jsonContent, `transactions-${currentFileName.replace('.pdf', '')}.json`, 'application/json;charset=utf-8;');
+        }
+
+        // --- EVENT LISTENERS & INITIALIZATION ---
+        fileUploadArea.addEventListener('click', () => fileUploadInput.click());
+        fileUploadInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => 
+            fileUploadArea.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            })
+        );
+        ['dragenter', 'dragover'].forEach(eventName => {
+            fileUploadArea.addEventListener(eventName, () => {
+                fileUploadArea.classList.add('border-indigo-500', 'bg-indigo-50');
+            });
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            fileUploadArea.addEventListener(eventName, () => {
+                fileUploadArea.classList.remove('border-indigo-500', 'bg-indigo-50');
+            });
+        });
+        
+        fileUploadArea.addEventListener('drop', (e) => {
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        exportCsvButton.addEventListener('click', exportToCSV);
+        exportJsonButton.addEventListener('click', exportToJSON);
+        
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', () => {
+             updateStatus('idle', 'Awaiting file upload...');
+        });
+
+    </script>
+</body>
+</html>
